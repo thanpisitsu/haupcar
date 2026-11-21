@@ -1,15 +1,15 @@
-# 🚗 Haupcar Car Management System
+# Car Management System
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Node.js**: v18+
 - **npm**: v9+
 
 ---
 
-## ⚡ Quick Start Guide
+## Start Guide
 
 ### Step 1: Install Dependencies (First-time only)
 
@@ -77,13 +77,13 @@ npm run test
 
 ---
 
-## 🛠️ API Reference Summary
+## API Reference Summary
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/cars` | Get all cars (supports `?search=`, `?brand=`, `?status=`) |
+| `GET` | `/api/cars` | Get all cars |
 | `GET` | `/api/cars/:id` | Get car detail by ID |
-| `POST` | `/api/cars` | Add a new car (validates duplicate plate & province) |
+| `POST` | `/api/cars` | Add a new car |
 | `PUT` | `/api/cars/:id` | Update car details |
 | `PATCH` | `/api/cars/:id` | Partial update (e.g. status) |
 | `DELETE` | `/api/cars/:id` | Delete car by ID |
