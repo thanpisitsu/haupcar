@@ -23,9 +23,7 @@ export const carApi = {
     return json.data || json;
   },
 
-  /**
-   * Get single car by ID
-   */
+  // get car by ID
   async getCarById(id: string): Promise<Car> {
     const res = await fetch(`${API_BASE_URL}/cars/${id}`);
     if (!res.ok) {
