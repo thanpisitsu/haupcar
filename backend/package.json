@@ -1,0 +1,26 @@
+{
+  "name": "haupcar-backend",
+  "version": "1.0.0",
+  "description": "Haupcar Fleet Management Backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node dist/main.js",
+    "start:dev": "tsc --watch",
+    "start:prod": "node dist/main.js",
+    "test": "tsc && node --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/platform-express": "^11.0.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  }
+}
