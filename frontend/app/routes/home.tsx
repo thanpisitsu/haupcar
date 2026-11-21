@@ -19,8 +19,6 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-const STORAGE_KEY = "haupcar_fleet_data_v1";
-
 export default function Home() {
   const [cars, setCars] = useState<Car[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +32,8 @@ export default function Home() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
   const [detailCar, setDetailCar] = useState<Car | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [deletingCar, setDeletingCar] = useState<Car | null>(null);
 
   // Toast notifications
@@ -146,6 +146,27 @@ export default function Home() {
     setIsFormOpen(true);
   };
 
+  const handleViewCar = async (car: Car) => {
+    setIsDetailOpen(true);
+    setIsLoadingDetail(true);
+    setDetailCar(car);
+
+    try {
+      const freshCar = await carApi.getCarById(car.id);
+      setDetailCar(freshCar);
+    } catch (err: any) {
+      console.error("Failed to fetch car by ID:", err);
+      showToast(err.message || `ไม่สามารถดึงข้อมูลรถ ${car.regisNumber} จากระบบได้`, "error");
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setIsDetailOpen(false);
+    setDetailCar(null);
+  };
+
   const handleFormSubmit = async (formData: CarFormData) => {
     try {
       if (editingCar) {
@@ -242,7 +263,7 @@ export default function Home() {
         ) : (
           <CarTable
             cars={filteredCars}
-            onView={setDetailCar}
+            onView={handleViewCar}
             onEdit={handleOpenEdit}
             onDelete={setDeletingCar}
           />
@@ -262,8 +283,10 @@ export default function Home() {
       />
 
       <CarDetailModal
+        isOpen={isDetailOpen}
         car={detailCar}
-        onClose={() => setDetailCar(null)}
+        isLoading={isLoadingDetail}
+        onClose={handleCloseDetail}
         onEdit={handleOpenEdit}
       />
 
