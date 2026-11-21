@@ -1,4 +1,4 @@
-export type CarStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE';
+export type CarStatus = 'AVAILABLE' | 'IN_USE' | 'UNAVAILABLE';
 
 export interface Car {
   id: string;
@@ -10,7 +10,7 @@ export interface Car {
   color: string;              // สีรถ
   seats: number;              // จำนวนที่นั่ง
   fuelType: 'Gasoline' | 'Diesel' | 'Hybrid' | 'Electric'; // ชนิดเชื้อเพลิง
-  status: CarStatus;          // สถานะ (AVAILABLE, IN_USE, MAINTENANCE)
+  status: CarStatus;          // สถานะ (AVAILABLE, IN_USE, UNAVAILABLE)
   notes: string;              // หมายเหตุ
   createdAt: string;
   updatedAt: string;

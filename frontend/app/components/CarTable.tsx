@@ -23,9 +23,9 @@ export function StatusBadge({ status }: { status: CarStatus }) {
       text: 'text-amber-700',
       dot: 'bg-amber-500',
     },
-    MAINTENANCE: {
-      labelEn: 'Maintenance',
-      labelTh: 'ซ่อมบำรุง',
+    UNAVAILABLE: {
+      labelEn: 'Unavailable',
+      labelTh: 'ไม่พร้อมใช้งาน',
       bg: 'bg-rose-50 border-rose-200',
       text: 'text-rose-700',
       dot: 'bg-rose-500',
@@ -72,10 +72,10 @@ export function CarTable({ cars, onView, onEdit, onDelete }: CarTableProps) {
             {cars.map((car) => (
               <tr key={car.id} className="hover:bg-blue-50/40 transition">
                 {/* Registration Plate */}
-                <td className="px-5 py-4 whitespace-nowrap text-center">
-                  <span className="relative inline-block border-2 text-gray-900 font-semibold w-24 pb-2.5 rounded-sm">
+                <td className="px-5 py-5 whitespace-nowrap text-center">
+                  <span className="relative inline-block border-2 text-gray-900 text-lg font-semibold w-28 pt-1 pb-4 rounded-sm">
                     {car?.regisNumber}
-                    <span className="absolute text-[9px] text-gray-700 bottom-0 left-0 flex items-center justify-center w-full">
+                    <span className="absolute text-[10px] text-gray-600 bottom-0.5 left-0 flex items-center justify-center w-full">
                       {car?.province}
                     </span>
                   </span>

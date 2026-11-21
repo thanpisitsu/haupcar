@@ -1,32 +1,34 @@
-import { useState, useEffect, useMemo } from 'react';
-import type { Route } from './+types/home';
-import type { Car, CarFormData } from '../types/car';
-import { INITIAL_MOCK_CARS } from '../data/mockCars';
-import { StatsOverview } from '../components/StatsOverview';
-import { CarFilters } from '../components/CarFilters';
-import { CarTable } from '../components/CarTable';
-import { CarFormModal } from '../components/CarFormModal';
-import { CarDetailModal } from '../components/CarDetailModal';
-import { DeleteModal } from '../components/DeleteModal';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import type { Route } from "./+types/home";
+import type { Car, CarFormData } from "../types/car";
+import { StatsOverview } from "../components/StatsOverview";
+import { CarFilters } from "../components/CarFilters";
+import { CarTable } from "../components/CarTable";
+import { CarFormModal } from "../components/CarFormModal";
+import { CarDetailModal } from "../components/CarDetailModal";
+import { DeleteModal } from "../components/DeleteModal";
+import { carApi } from "../services/carApi";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'Haupcar Fleet Manager - ข้อมูลรถยนต์บริษัท' },
-    { name: 'description', content: 'ระบบบันทึกและจัดการข้อมูลรถยนต์ บริษัท ฮ้อปคาร์ จำกัด' },
+    { title: "Haupcar Fleet Manager - ข้อมูลรถยนต์บริษัท" },
+    {
+      name: "description",
+      content: "ระบบบันทึกและจัดการข้อมูลรถยนต์ บริษัท ฮ้อปคาร์ จำกัด",
+    },
   ];
 }
 
-const STORAGE_KEY = 'haupcar_fleet_data_v1';
+const STORAGE_KEY = "haupcar_fleet_data_v1";
 
 export default function Home() {
-  // initial state
-  const [cars, setCars] = useState<Car[]>(INITIAL_MOCK_CARS);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [cars, setCars] = useState<Car[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Filters & display state
-  const [search, setSearch] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [search, setSearch] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("ALL");
 
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -35,34 +37,42 @@ export default function Home() {
   const [deletingCar, setDeletingCar] = useState<Car | null>(null);
 
   // Toast notifications
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "info" | "error";
+  } | null>(null);
 
-  // Load from localStorage on client-side
-  useEffect(() => {
+  const showToast = useCallback(
+    (message: string, type: "success" | "info" | "error" = "success") => {
+      setToast({ message, type });
+    },
+    [],
+  );
+
+  // Fetch cars from Backend API
+  const loadCarsFromApi = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setCars(parsed);
-        }
+      const data = await carApi.getCars();
+      if (Array.isArray(data) && data.length > 0) {
+        setCars(data);
+      } else {
+        setCars([]);
       }
-    } catch (e) {
-      console.warn('Could not read from localStorage, using initial mock data:', e);
+      setIsLoading(false);
+    } catch (err) {
+      console.warn(
+        "Backend API connection failed",
+        err,
+      );
+      setIsLoading(false);
     }
-    setIsLoaded(true);
   }, []);
 
-  // Save to localStorage whenever cars change
+  // Initial load
   useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cars));
-      } catch (e) {
-        console.warn('Could not write to localStorage:', e);
-      }
-    }
-  }, [cars, isLoaded]);
+    loadCarsFromApi();
+  }, [loadCarsFromApi]);
 
   // Toast timer
   useEffect(() => {
@@ -72,28 +82,23 @@ export default function Home() {
     }
   }, [toast]);
 
-  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
-    setToast({ message, type });
-  };
-
   // Stats calculation
   const stats = useMemo(() => {
     let available = 0;
     let inUse = 0;
-    let maintenance = 0;
+    let unavailable = 0;
 
     cars.forEach((car) => {
-      if (car.status === 'AVAILABLE') available++;
-      else if (car.status === 'IN_USE') inUse++;
-      else if (car.status === 'MAINTENANCE') maintenance++;
-
+      if (car.status === "AVAILABLE") available++;
+      else if (car.status === "IN_USE") inUse++;
+      else if (car.status === "UNAVAILABLE") unavailable++;
     });
 
     return {
       total: cars.length,
       available,
       inUse,
-      maintenance,
+      unavailable,
     };
   }, [cars]);
 
@@ -105,20 +110,24 @@ export default function Home() {
         const q = search.trim().toLowerCase();
         const match =
           car.regisNumber.toLowerCase().includes(q) ||
+          car.province.toLowerCase().includes(q) ||
           car.brand.toLowerCase().includes(q) ||
           car.model.toLowerCase().includes(q) ||
           car.color.toLowerCase().includes(q) ||
-          car.notes.toLowerCase().includes(q);
+          (car.notes && car.notes.toLowerCase().includes(q));
         if (!match) return false;
       }
 
       // Brand filter
-      if (selectedBrand && car.brand.toLowerCase() !== selectedBrand.toLowerCase()) {
+      if (
+        selectedBrand &&
+        car.brand.toLowerCase() !== selectedBrand.toLowerCase()
+      ) {
         return false;
       }
 
       // Status filter
-      if (selectedStatus !== 'ALL' && car.status !== selectedStatus) {
+      if (selectedStatus !== "ALL" && car.status !== selectedStatus) {
         return false;
       }
 
@@ -137,54 +146,43 @@ export default function Home() {
     setIsFormOpen(true);
   };
 
-  const handleFormSubmit = (formData: CarFormData) => {
-    const now = new Date().toISOString();
-
-    if (editingCar) {
-      // Update existing car
-      setCars((prev) =>
-        prev.map((c) =>
-          c.id === editingCar.id
-            ? {
-                ...c,
-                ...formData,
-                updatedAt: now,
-              }
-            : c,
-        ),
-      );
-      showToast(`แก้ไขข้อมูลรถ ${formData.brand} ${formData.model} เรียบร้อยแล้ว`);
-    } else {
-      // Add new car
-      const newCar: Car = {
-        ...formData,
-        id: `car-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        createdAt: now,
-        updatedAt: now,
-      };
-      setCars((prev) => [newCar, ...prev]);
-      showToast(`เพิ่มรถยนต์ ${formData.brand} ${formData.model} เข้าสู่ระบบแล้ว`);
+  const handleFormSubmit = async (formData: CarFormData) => {
+    try {
+      if (editingCar) {
+        const updated = await carApi.updateCar(editingCar.id, formData);
+        setCars((prev) =>
+          prev.map((c) => (c.id === editingCar.id ? updated : c)),
+        );
+        showToast(
+          `แก้ไขข้อมูลรถ ${formData.brand} ${formData.model} สำเร็จ`,
+          "success",
+        );
+      } else {
+        // Create via Backend API
+        const created = await carApi.createCar(formData);
+        setCars((prev) => [created, ...prev]);
+        showToast(
+          `เพิ่มรถยนต์ ${formData.brand} ${formData.model} สำเร็จ`,
+          "success",
+        );
+      }
+      setIsFormOpen(false);
+      setEditingCar(null);
+    } catch (err: any) {
+      showToast(err.message || "เกิดข้อผิดพลาด", "error");
     }
-
-    setIsFormOpen(false);
-    setEditingCar(null);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!deletingCar) return;
 
-    setCars((prev) => prev.filter((c) => c.id !== deletingCar.id));
-    showToast(`ลบข้อมูลรถยนต์ ${deletingCar.regisNumber} เรียบร้อยแล้ว`, 'info');
-    setDeletingCar(null);
-  };
-
-  const handleResetData = () => {
-    if (confirm('ต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นข้อมูลตัวอย่างเริ่มต้นใช่หรือไม่?')) {
-      setCars(INITIAL_MOCK_CARS);
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch (e) {}
-      showToast('รีเซ็ตข้อมูลกลับเป็นตัวอย่างเริ่มต้นแล้ว', 'info');
+    try {
+      await carApi.deleteCar(deletingCar.id);
+      setCars((prev) => prev.filter((c) => c.id !== deletingCar.id));
+      showToast(`ลบข้อมูลรถยนต์ ${deletingCar.regisNumber} สำเร็จ`, "info");
+      setDeletingCar(null);
+    } catch (err: any) {
+      showToast(err.message || "เกิดข้อผิดพลาดในการลบข้อมูล", "error");
     }
   };
 
@@ -197,13 +195,18 @@ export default function Home() {
         {/* Intro banner */}
         <div className="mb-6 rounded-2xl py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              ระบบบันทึกข้อมูลรถยนต์
-            </h1>
+            <div className="flex items-center space-x-3 mb-1">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                ระบบบันทึกข้อมูลรถยนต์
+              </h1>
+            </div>
+            <p className="text-sm text-gray-500">
+              ระบบบันทึกข้อมูลรถยนต์ที่พร้อมใช้งานภายใต้บริษัท
+            </p>
           </div>
           <button
             onClick={handleOpenAdd}
-            className="px-5 py-2.5 text-white bg-blue-700 hover:bg-white hover:text-blue-700 border border-blue-700  font-bold text-sm rounded-xl shadow-xs 
+            className="px-5 py-2.5 text-white bg-blue-700 hover:bg-white hover:text-blue-700 border border-blue-700 font-bold text-sm rounded-xl shadow-xs 
             transition cursor-pointer flex items-center space-x-2 whitespace-nowrap"
           >
             <span>+</span>
@@ -216,7 +219,7 @@ export default function Home() {
           total={stats.total}
           available={stats.available}
           inUse={stats.inUse}
-          maintenance={stats.maintenance}
+          unavailable={stats.unavailable}
           selectedStatus={selectedStatus}
           onSelectStatus={setSelectedStatus}
         />
@@ -231,12 +234,19 @@ export default function Home() {
         />
 
         {/* Content: Table */}
-        <CarTable
-          cars={filteredCars}
-          onView={setDetailCar}
-          onEdit={handleOpenEdit}
-          onDelete={setDeletingCar}
-        />
+        {isLoading ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
+            <p className="text-sm text-gray-500">กำลังโหลดข้อมูล...</p>
+          </div>
+        ) : (
+          <CarTable
+            cars={filteredCars}
+            onView={setDetailCar}
+            onEdit={handleOpenEdit}
+            onDelete={setDeletingCar}
+          />
+        )}
       </main>
 
       {/* Modals */}
@@ -265,8 +275,12 @@ export default function Home() {
       />
 
       {/* Toast Notification */}
-      <div className={`${toast ? 'block' : 'hidden'} fixed top-6 right-6 z-50 flex items-center rounded-md shadow-lg text-sm font-medium animate-in slide-in-from-top-5 duration-500 overflow-hidden`}>
-        <div className={`px-3 py-4 text-white ${toast?.type === 'success' ? 'bg-green-500' : toast?.type === 'info' ? 'bg-blue-500' : 'bg-rose-500'}`} >
+      <div
+        className={`${toast ? "block" : "hidden"} fixed top-6 right-6 z-50 flex items-center rounded-md shadow-lg text-sm font-medium animate-in slide-in-from-top-5 duration-500 overflow-hidden`}
+      >
+        <div
+          className={`px-4 py-3 text-white ${toast?.type === "success" ? "bg-emerald-600" : toast?.type === "info" ? "bg-blue-600" : "bg-rose-600"}`}
+        >
           <span>{toast?.message}</span>
         </div>
       </div>

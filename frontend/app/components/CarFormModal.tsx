@@ -246,7 +246,7 @@ export function CarFormModal({
               {[
                 { val: 'AVAILABLE', label: 'ว่าง (Available)', color: 'text-emerald-700 border-emerald-300 bg-emerald-50' },
                 { val: 'IN_USE', label: 'ใช้งานอยู่ (In Use)', color: 'text-amber-700 border-amber-300 bg-amber-50' },
-                { val: 'MAINTENANCE', label: 'ซ่อมบำรุง (Maintenance)', color: 'text-rose-700 border-rose-300 bg-rose-50' },
+                { val: 'UNAVAILABLE', label: 'ไม่พร้อมใช้งาน (Unavailable)', color: 'text-rose-700 border-rose-300 bg-rose-50' },
               ].map((s) => (
                 <button
                   type="button"

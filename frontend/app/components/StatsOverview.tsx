@@ -2,7 +2,7 @@ interface StatsOverviewProps {
   total: number;
   available: number;
   inUse: number;
-  maintenance: number;
+  unavailable: number;
   selectedStatus: string;
   onSelectStatus: (status: string) => void;
 }
@@ -11,7 +11,7 @@ export function StatsOverview({
   total,
   available,
   inUse,
-  maintenance,
+  unavailable,
   selectedStatus,
   onSelectStatus,
 }: StatsOverviewProps) {
@@ -44,10 +44,10 @@ export function StatsOverview({
       ringColor: 'ring-amber-500',
     },
     {
-      label: 'Maintenance',
-      sublabel: 'ซ่อมบำรุง',
-      count: maintenance,
-      value: 'MAINTENANCE',
+      label: 'Unavailable',
+      sublabel: 'ไม่พร้อมใช้งาน',
+      count: unavailable,
+      value: 'UNAVAILABLE',
       bgColor: 'bg-rose-50 border-rose-200 text-rose-900',
       badgeColor: 'bg-rose-600 text-white',
       ringColor: 'ring-rose-500',
