@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, Optional, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { DatabaseSync } from 'node:sqlite';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -26,7 +26,7 @@ export interface Car {
 export class CarsService {
   private db: DatabaseSync;
 
-  constructor(customDbPath?: string) {
+  constructor(@Optional() customDbPath?: string) {
     if (customDbPath) {
       this.db = new DatabaseSync(customDbPath);
       this.initTable();
